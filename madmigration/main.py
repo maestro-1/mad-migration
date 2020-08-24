@@ -44,7 +44,7 @@ class Controller:
         # detect migration class
         migrate = detect_driver(self.destinationDB_driver)
         for migrate_table in self.migration_tables:
-            mig = migrate(migrate_table.migrationTable,self.destinationDB.engine)
+            mig = migrate(migrate_table.migrationTable, self.destinationDB.engine)
             mig.create_tables()
         migrate.create_fk_constraint(self.destinationDB.engine)
 
@@ -62,11 +62,15 @@ class Controller:
                 return column.type
 
     def run(self):
+        self.destinationDB.session.close_all()
+        self.destinationDB.session.flush()
 
-        # Looping in migrationTables
+        #Looping in migrationTables
         for mt in self.migration_tables:
-            self.destination_table = mt.migrationTable.DestinationTable
-            count = 0
+            self.destination_table = mt.migrationTable.DestinationTable.get("name")
+
+            # destinationTable object is the instance of Table of target database
+            destinationTable = getattr(self.destinationDB.base.classes, self.destination_table)
 
             # Migrate class is use based on driver
             Migrate = detect_driver(self.sourceDB_driver)
@@ -93,8 +97,11 @@ class Controller:
             # self.source_data is data received (yield) from get_data_from_source_table function
             self.source_data = migrate.get_data_from_source_table(mt.migrationTable.SourceTable, columns)
 
-            # Looping in self.source_data
+            # Beginning to loop in self.source_data
             for data in self.source_data:
+                destination_default_value = False
+
+                # Once we get first row (data) from old table be have to loop in columns to get options for data
                 for columns in mt.migrationTable.MigrationColumns:
                     source_column = columns.sourceColumn.get("name")
                     destination_column = columns.destinationColumn.name
@@ -103,6 +110,9 @@ class Controller:
                         destination_type_cast = columns.destinationColumn.options.type_cast
                     else:
                         destination_type_cast = None
+
+                    if columns.destinationColumn.options.default:
+                        destination_default_value = columns.destinationColumn.options.default
 
                     if self.convert_info.get(destination_column):
                         # ClassType is Class of data type (int, str, float, etc...)
@@ -115,24 +125,21 @@ class Controller:
                             else:
                                 data[destination_column] = ClassType(data.pop(source_column))
                         except Exception as err:
-                            print(err)
                             data[destination_column] = None
                     else:
                         data[destination_column] = data.pop(source_column)
 
+                    # If value of column is None and default value in yaml specified
+                    # then we have to change value of column and convert specified format
+                    if data[destination_column] is None and destination_default_value:
+                        data[destination_column] = ClassType(destination_default_value)
+
                 # print(data)
+                # migrate instance insert_data function is used to insert data into destination table
+                try:
+                    migrate.insert_data(data, destinationTable, self.destinationDB)
+                except Exception as err:
+                    print(err)
 
-            print(getattr(self.destinationDB.base.classes, self.destination_table.get("name")))
-            # print(self.destination_table.get("name"))
-
-
-
-
-
-
-
-
-
-
-
+                self.destinationDB.session.close()
 

@@ -118,23 +118,25 @@ class Migrate:
     def check_table(self,table_name: str) -> bool:
         return self.engine.dialect.has_table(self.engine.connect(),table_name)
 
-        
-    def get_table_attribute_from_base_class(self, source_table_name: str):
+    def get_source_table_attribute_from_base_class(self, source_table_name: str):
         """
         This function gets table name attribute from sourceDB.base.classes. Example sourceDB.base.class.(table name)
         Using this attribute we can query table using sourceDB.session
         :return table attribute
         """
-        # for i in dir(self.sourceDB.base.classes):
-        #     print(i)
-
-        # print(" ---------- ")
-
         return getattr(self.sourceDB.base.classes, source_table_name)
+
+    def get_destination_table_attribute_from_base_class(self, destination_table_name: str):
+        """
+        This function gets table name attribute from destinationDB.base.classes. Example destinationDB.base.class.(table name)
+        Using this attribute we can query table using sourceDB.session
+        :return table attribute
+        """
+        return getattr(self.destinationDB.base.classes, destination_table_name)
 
     def get_data_from_source_table(self, source_table_name: str, source_columns: list):
 
-        table = self.get_table_attribute_from_base_class(source_table_name.get("name"))
+        table = self.get_source_table_attribute_from_base_class(source_table_name.get("name"))
 
         rows = self.sourceDB.session.query(table).yield_per(1)
 
@@ -143,6 +145,17 @@ class Migrate:
             for column in source_columns:
                 data[column] = getattr(row, column)
             yield data
+
+    def insert_data(self, data, destinationTable, destinationDB):
+
+        insert_data = destinationTable(**data)
+
+        try:
+            destinationDB.session.add(insert_data)
+            destinationDB.session.commit()
+        except Exception as err:
+            print(err)
+            self.destinationDB.session.rollback()
 
 
     @staticmethod

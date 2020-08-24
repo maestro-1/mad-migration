@@ -19,6 +19,7 @@ class OptionsSchema(BaseModel):
     length: int = None
 
     type_cast: str = None
+    default: str = None
 
 
 class SourceConfigSchema(BaseModel):

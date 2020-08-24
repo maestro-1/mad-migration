@@ -12,7 +12,7 @@ migrationTables:
       SourceTable:
         name: cars
       DestinationTable:
-        name: drivers_drivers
+        name: automobiles_automobile
         create: True # -> I suggest that we have to define this option that will tell us whether we have to create tables or not
 
       MigrationColumns:
@@ -23,58 +23,57 @@ migrationTables:
             options:
               primary_key: true
               autoincrement: true
-              type_cast: uuid
-
-        - sourceColumn:
-            name: driver
-          destinationColumn:
-            name: firstname
-            options:
-              length: 255
-              type_cast: string
+              type_cast: int
 
         - sourceColumn:
             name: release_year
           destinationColumn:
             name: year
             options:
-              type_cast: string
-              foreign_key:
-                table_name: automobiles
-                column_name: id
-
-  - migrationTable:
-      SourceTable:
-        name: persons
-      DestinationTable:
-        name: automobiles_automobile
-
-      MigrationColumns:
-        - sourceColumn:
-            name: id
-          destinationColumn:
-            name: id
-            options:
-              primary_key: true
-              autoincrement: true
-              type_cast: Integer
+              type_cast: int
+              default: 2020
 
         - sourceColumn:
-            name: name
+            name: number
           destinationColumn:
-            name: test_name
+            name: gos_number
             options:
-              type_cast: String
+              type_cast: varchar
               length: 255
-              nullable: False
 
-        - sourceColumn:
-            name: voen
-          destinationColumn:
-            name: test_name
-            options:
-              type_cast: String
-              length: 255
-              nullable: False
+
+#  - migrationTable:
+#      SourceTable:
+#        name: persons
+#      DestinationTable:
+#        name: drivers_drivers
+#
+#      MigrationColumns:
+#        - sourceColumn:
+#            name: id
+#          destinationColumn:
+#            name: id
+#            options:
+#              primary_key: true
+#              autoincrement: true
+#              type_cast: Integer
+#
+#        - sourceColumn:
+#            name: name
+#          destinationColumn:
+#            name: first_name
+#            options:
+#              type_cast: String
+#              length: 255
+#              nullable: False
+#
+#        - sourceColumn:
+#            name: status
+#          destinationColumn:
+#            name: status
+#            options:
+#              type_cast: String
+#              length: 255
+#              nullable: False
               
 
